@@ -172,12 +172,15 @@ namespace EspionSpotify.Native
 
         public static string GetAlbumDirectoryName(Track track, string trackTitleSeparator = " ", int maxLength = -1)
         {
-            var albumInfos = new List<string>
-            {
-                string.IsNullOrEmpty(track.Album) ? Constants.UNTITLED_ALBUM : Normalize.RemoveDiacritics(track.Album)
-            };
-            if (track.Year.HasValue) albumInfos.Add($"({track.Year.Value})");
-            return GetCleanFileFolder(string.Join(" ", albumInfos), maxLength).Replace(" ", trackTitleSeparator);
+            var normalizeAlbumName = string.IsNullOrEmpty(track.Album)
+                ? Constants.UNTITLED_ALBUM
+                : Normalize.RemoveDiacritics(track.Album);
+
+            var yearInfo = track.Year.HasValue ? $"[{track.Year.Value}] " : "[0000]";
+
+            var albumDirectoryName = $"{yearInfo}{normalizeAlbumName}";
+
+            return GetCleanFileFolder(albumDirectoryName, maxLength).Replace(" ", trackTitleSeparator);
         }
 
         public static (int, string) GetFolderMaxLength(UserSettings userSettings)
