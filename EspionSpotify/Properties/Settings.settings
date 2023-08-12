@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="EspionSpotify.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
@@ -15,7 +15,7 @@
       <Value Profile="(Default)">30</Value>
     </Setting>
     <Setting Name="advanced_file_group_media_in_folders_enabled" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
+      <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="advanced_file_replace_space_by_underscore_enabled" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
@@ -92,6 +92,8 @@
     <Setting Name="advanced_file_album_track_number_prefix_enabled" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="advanced_normalize_db_target" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">96</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
-

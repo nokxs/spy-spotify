@@ -382,5 +382,17 @@ namespace EspionSpotify.Properties {
                 this["advanced_file_album_track_number_prefix_enabled"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("96")]
+        public int advanced_normalize_db_target {
+            get {
+                return ((int)(this["advanced_normalize_db_target"]));
+            }
+            set {
+                this["advanced_normalize_db_target"] = value;
+            }
+        }
     }
 }
