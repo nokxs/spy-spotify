@@ -6,7 +6,7 @@ namespace EspionSpotify.API
 {
     public class NoneAPI: IExternalAPI
     {
-        public ExternalAPIType GetTypeAPI => ExternalAPIType.None;
+        public ExternalAPIType ApiType => ExternalAPIType.None;
         public bool IsAuthenticated => true;
         public Task Authenticate()
         {

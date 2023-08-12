@@ -6,7 +6,7 @@ namespace EspionSpotify.API
 {
     public interface IExternalAPI
     {
-        ExternalAPIType GetTypeAPI { get; }
+        ExternalAPIType ApiType { get; }
         bool IsAuthenticated { get; }
         Task Authenticate();
         void Reset();

@@ -635,6 +635,12 @@ namespace EspionSpotify
                 if (IsOutputDirectoryNotFound()) return;
                 if (IsOutputDirectoryPathTooLong()) return;
 
+                if (ExternalAPI.Instance.ApiType != ExternalAPIType.Spotify)
+                {
+                    MetroMessageBox.Show(this, "Cannot start, because Spotifiy is not the ID3 provider");
+                    return;
+                }
+
                 tcMenu.SelectedIndex = 0;
                 StartRecording();
                 UpdateLinkImage(lnkSpy, Resources.off);

@@ -30,7 +30,7 @@ namespace EspionSpotify.API
             _selectedApiKey = ApiKeys[random.Next(ApiKeys.Length)];
         }
 
-        public ExternalAPIType GetTypeAPI => ExternalAPIType.LastFM;
+        public ExternalAPIType ApiType => ExternalAPIType.LastFM;
 
         public async Task<bool> UpdateTrack(Track track)
         {

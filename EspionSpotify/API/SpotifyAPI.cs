@@ -56,7 +56,7 @@ namespace EspionSpotify.API
 
         public bool IsAuthenticated => _token != null;
 
-        public ExternalAPIType GetTypeAPI => ExternalAPIType.Spotify;
+        public ExternalAPIType ApiType => ExternalAPIType.Spotify;
 
         public async Task<bool> UpdateTrack(Track track)
         {
