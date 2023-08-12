@@ -189,6 +189,7 @@
     <Compile Include="Extensions\JsonObjectExtensions.cs" />
     <Compile Include="Models\AudioWaveBuffer.cs" />
     <Compile Include="Native\Models\HRESULT.cs" />
+    <Compile Include="Native\VolumeNormalizer.cs" />
     <Compile Include="Router\AudioRouter.cs" />
     <Compile Include="Router\Helpers\AudioPolicyConfigFactory.cs" />
     <Compile Include="Router\Helpers\AudioPolicyConfigFactoryImplFor21H2.cs" />

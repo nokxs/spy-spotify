@@ -25,6 +25,7 @@ namespace EspionSpotify
         
         private readonly bool _initiated;
         private readonly FileManager _fileManager;
+        private readonly VolumeNormalizer _volumeNormalizer;
         private readonly IFileSystem _fileSystem;
         private readonly IFrmEspionSpotify _form;
         private readonly Track _track;
@@ -69,6 +70,7 @@ namespace EspionSpotify
             _fileSystem = fileSystem;
             _track = track;
             _fileManager = new FileManager(_userSettings, _track, fileSystem);
+            _volumeNormalizer = new VolumeNormalizer();
             _processManager = processManager;
 
             _initiated = init && Init();
@@ -260,6 +262,8 @@ namespace EspionSpotify
             _form.WriteIntoConsole(I18NKeys.LogRecorded, _currentOutputFile.ToString(), length);
 
             await UpdateMediaTagsFileBasedOnMediaFormat();
+
+            _volumeNormalizer.Normalize(_currentOutputFile.ToMediaFilePath());
 
             EndRecording();
         }
