@@ -166,18 +166,17 @@ namespace EspionSpotify.Native
 
         public static string GetArtistDirectoryName(Track track, string trackTitleSeparator = " ", int maxLength = -1)
         {
-            var artistDir = Normalize.RemoveDiacritics(track.Artists);
+            var artistDir = Normalize.RemoveDiacritics(track.Artist);
             return GetCleanFileFolder(artistDir, maxLength).Replace(" ", trackTitleSeparator);
         }
 
         public static string GetAlbumDirectoryName(Track track, string trackTitleSeparator = " ", int maxLength = -1)
         {
-            var albumInfos = new List<string>
-            {
-                string.IsNullOrEmpty(track.Album) ? Constants.UNTITLED_ALBUM : Normalize.RemoveDiacritics(track.Album)
-            };
-            if (track.Year.HasValue) albumInfos.Add($"({track.Year.Value})");
-            return GetCleanFileFolder(string.Join(" ", albumInfos), maxLength).Replace(" ", trackTitleSeparator);
+            string trackYear = track.Year.HasValue ? $"[{track.Year.Value}] " : string.Empty;
+            string album = string.IsNullOrEmpty(track.Album) ? Constants.UNTITLED_ALBUM : Normalize.RemoveDiacritics(track.Album);
+            string albumInfos = $"{trackYear}{album}";
+
+            return GetCleanFileFolder(albumInfos, maxLength).Replace(" ", trackTitleSeparator);
         }
 
         public static (int, string) GetFolderMaxLength(UserSettings userSettings)
@@ -248,8 +247,8 @@ namespace EspionSpotify.Native
 
             var fileName = Normalize.RemoveDiacritics(
                 GoesAtRoot(userSettings.GroupByFoldersEnabled, track.IsUnknown)
-                    ? track.ToString()
-                    : track.ToTitleString());
+                    ? track.ToTitleString()
+                    : track.ToString());
 
             if (track.Ad && !track.IsUnknownPlaying) fileName = $"{Constants.ADVERTISEMENT} {now:yyyyMMddHHmmss}";
 
@@ -268,7 +267,7 @@ namespace EspionSpotify.Native
                 ? albumPosition.ToString("00 ")
                 : null;
 
-            return Regex.Replace($"{counterNumber}{trackNumber}{fileName}", @"\s", userSettings.TrackTitleSeparator ?? " ");
+            return Regex.Replace($"{counterNumber}{trackNumber} - {fileName}", @"\s", userSettings.TrackTitleSeparator ?? " ");
         }
 
         private void DeleteFileFolder(string currentFile)
