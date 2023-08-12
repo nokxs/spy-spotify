@@ -466,6 +466,9 @@
     <Content Include="libmp3lame.64.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="mp3gain.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\add_device.gif" />
     <None Include="Resources\spotify.gif" />
     <None Include="Resources\faq.gif" />
