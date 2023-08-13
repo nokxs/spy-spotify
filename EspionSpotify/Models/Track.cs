@@ -156,9 +156,10 @@ namespace EspionSpotify.Models
 
         public string ToTitleString()
         {
-            var song = IsUnknownPlaying ? Artist : Title;
+            var song = IsUnknownPlaying ? Artist : $"{Artist} - {Title}";
 
-            if (!string.IsNullOrEmpty(Title) && !string.IsNullOrEmpty(TitleExtended)) song += GetTitleExtended();
+            if (!string.IsNullOrEmpty(Title) && !string.IsNullOrEmpty(TitleExtended)) 
+                song += GetTitleExtended();
 
             return song ?? "";
         }
