@@ -142,7 +142,7 @@ namespace EspionSpotify.API
             var url = GetTrackInfo(encodedArtist, encodedTitle);
             var node = await FetchFromAPI(url);
 
-           if (node.Track == null) return false;
+           if (node?.Track == null) return false;
 
             var trackExtra = node.Track;
 
@@ -173,7 +173,7 @@ namespace EspionSpotify.API
             var url = GetAlbumInfo(encodedArtist, encodedTitle);
             var node = await FetchFromAPI(url);
             
-            if (node.Album == null) return;
+            if (node?.Album == null) return;
 
             trackExtra.Album ??= new Album();
             trackExtra.Album.FromSingleAlbum(node.Album);

@@ -26,7 +26,7 @@ namespace EspionSpotify
         private readonly IFileSystem _fileSystem;
 
         private readonly IFrmEspionSpotify _form;
-        private readonly List<RecorderTask> _recorderTasks;
+        private readonly List<RecorderTask> _recorderTasks; // use something thread safe
         private readonly UserSettings _userSettings;
         private Track _currentTrack;
         private bool _disposed;

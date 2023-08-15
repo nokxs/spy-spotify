@@ -264,8 +264,8 @@ namespace EspionSpotify.Native
 
             var albumPosition = track.AlbumPosition ?? 0;
             var trackNumber = userSettings.AlbumTrackNumberInfrontOfFileEnabled && albumPosition != 0
-                ? albumPosition.ToString("00 ")
-                : null;
+                ? albumPosition.ToString("00")
+                : "00 ";
 
             return Regex.Replace($"{counterNumber}{trackNumber} - {fileName}", @"\s", userSettings.TrackTitleSeparator ?? " ");
         }
