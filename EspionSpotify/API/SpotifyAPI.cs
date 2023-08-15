@@ -20,7 +20,6 @@ namespace EspionSpotify.API
         public const string SPOTIFY_API_DEFAULT_REDIRECT_URL = "http://localhost:4002";
         public const string SPOTIFY_API_DASHBOARD_URL = "https://developer.spotify.com/dashboard";
         private readonly AuthorizationCodeAuth _auth;
-        private readonly LastFMAPI _lastFmApi;
         private SpotifyWebAPI _api;
         private AuthorizationCodeAuth _authorizationCodeAuth;
         private bool _connectionDialogOpened;
@@ -34,8 +33,6 @@ namespace EspionSpotify.API
 
         public SpotifyAPI(string clientId, string secretId, string redirectUrl = SPOTIFY_API_DEFAULT_REDIRECT_URL)
         {
-            _lastFmApi = new LastFMAPI();
-
             if (!string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(secretId))
             {
                 _auth = new AuthorizationCodeAuth(clientId, secretId, redirectUrl, redirectUrl,
@@ -154,32 +151,40 @@ namespace EspionSpotify.API
             if (!retryDone && hasNoPlayback)
             {
                 await Task.Delay(1000);
-                var res = await UpdateTrack(track, true);
+                //var res = await UpdateTrack(track, true);
                 if (track.MetaDataUpdated != true)
                 {
-                    // open spotify authentication page if user is disconnected
-                    // user might be connected with a different account that the one that granted rights
-                    OpenAuthenticationDialog(true);           
+                    await RefreshApiAccessIfNecessary();
+
+                    if (IsSpotifyTokenExpired())
+                    {
+                        // open spotify authentication page if user is disconnected
+                        // user might be connected with a different account that the one that granted rights
+                        OpenAuthenticationDialog(true);
+                    }
                 }
-                return res;
+
+                return await UpdateTrack(track, true);
             }
 
             if (hasNoPlayback || playback.HasError())
             {
                 _api.Dispose();
+                throw new InvalidOperationException("Spotify api access is not available anymore");
 
-                // fallback in case getting the playback did not work
-                ExternalAPI.Instance = _lastFmApi;
-                Settings.Default.app_selected_external_api_id = (int) ExternalAPIType.LastFM;
-                Settings.Default.Save();
 
-                _ = Task.Run(() =>
-                {
-                    FrmEspionSpotify.Instance.UpdateExternalAPIToggle(ExternalAPIType.LastFM);
-                    FrmEspionSpotify.Instance.ShowFailedToUseSpotifyAPIMessage();
-                });
+                //// fallback in case getting the playback did not work
+                //ExternalAPI.Instance = _lastFmApi;
+                //Settings.Default.app_selected_external_api_id = (int) ExternalAPIType.LastFM;
+                //Settings.Default.Save();
 
-                return await _lastFmApi.UpdateTrack(track);
+                //_ = Task.Run(() =>
+                //{
+                //    FrmEspionSpotify.Instance.UpdateExternalAPIToggle(ExternalAPIType.LastFM);
+                //    FrmEspionSpotify.Instance.ShowFailedToUseSpotifyAPIMessage();
+                //});
+
+                //return await _lastFmApi.UpdateTrack(track);
             }
 
             // prevent changing track metadata with invalid ones (unknown track)
@@ -259,7 +264,13 @@ namespace EspionSpotify.API
                 return;
             }
 
-            if (_token.IsExpired())
+            await RefreshApiAccessIfNecessary();           
+        }
+
+        private async Task RefreshApiAccessIfNecessary()
+        {
+            if (IsSpotifyTokenExpired())
+            {
                 try
                 {
                     if (_api != null) _api.Dispose();
@@ -270,8 +281,10 @@ namespace EspionSpotify.API
                 {
                     // ignored
                 }
+            }
 
             if (_api == null)
+            {
                 try
                 {
                     _api = new SpotifyWebAPI
@@ -285,6 +298,12 @@ namespace EspionSpotify.API
                     _api = null;
                     _authorizationCodeAuth.Stop();
                 }
+            }
+        }
+
+        private bool IsSpotifyTokenExpired()
+        {
+            return _token.IsExpired();
         }
 
         private void Dispose(bool disposing)
