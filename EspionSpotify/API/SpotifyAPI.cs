@@ -303,7 +303,7 @@ namespace EspionSpotify.API
 
         private bool IsSpotifyTokenExpired()
         {
-            return _token.IsExpired();
+            return _token?.IsExpired() ?? true;
         }
 
         private void Dispose(bool disposing)
