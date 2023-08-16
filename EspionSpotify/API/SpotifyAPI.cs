@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EspionSpotify.Enums;
 using EspionSpotify.Extensions;
 using EspionSpotify.Models;
-using EspionSpotify.Properties;
 using EspionSpotify.Spotify;
 using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
@@ -40,6 +38,7 @@ namespace EspionSpotify.API
                     Scope.UserReadRecentlyPlayed | Scope.UserReadPlaybackState);
                 _auth.AuthReceived += AuthOnAuthReceived;
                 _auth.Start();
+                _auth.OpenBrowser();
             }
         }
 
@@ -276,6 +275,7 @@ namespace EspionSpotify.API
                     if (_api != null) _api.Dispose();
                     _api = null;
                     _token = await _authorizationCodeAuth.RefreshToken(_token.RefreshToken ?? _refreshToken);
+                    _refreshToken = _token.RefreshToken;
                 }
                 catch
                 {
