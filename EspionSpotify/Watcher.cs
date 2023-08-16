@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EspionSpotify.API;
 using EspionSpotify.AudioSessions;
-using EspionSpotify.Enums;
 using EspionSpotify.Events;
 using EspionSpotify.Extensions;
 using EspionSpotify.Models;
@@ -20,13 +19,15 @@ namespace EspionSpotify
 {
     public sealed class Watcher : IWatcher, IDisposable
     {
+        private object SyncRoot = new object();
+
         private const int WATCHER_DELAY_MS = 500;
         private readonly IMainAudioSession _audioSession;
         private AudioThrottler _audioThrottler;
         private readonly IFileSystem _fileSystem;
 
         private readonly IFrmEspionSpotify _form;
-        private readonly List<RecorderTask> _recorderTasks; // use something thread safe
+        private readonly List<RecorderTask> _recorderTasks; // this collection is locked via SyncRoot
         private readonly UserSettings _userSettings;
         private Track _currentTrack;
         private bool _disposed;
@@ -50,9 +51,9 @@ namespace EspionSpotify
             _currentTrack = track;
             _fileSystem = fileSystem;
             _recorderTasks = recorderTasks;
-            
+
             _cancellationToken = new CancellationTokenSource();
-            
+
             Settings.Default.app_console_logs = string.Empty;
             Settings.Default.Save();
         }
@@ -77,12 +78,21 @@ namespace EspionSpotify
         public int CountSeconds { get; set; }
         public ISpotifyHandler Spotify { get; set; }
 
-        public bool RecorderUpAndRunning => _recorderTasks.Any(x => 
-            !x.Task.IsCompleted && 
-            x.Recorder != null && 
-            x.Recorder.Running &&
-            x.Recorder.Track.Equals(_currentTrack)
-        );
+        public bool RecorderUpAndRunning
+        {
+            get
+            {
+                lock (SyncRoot)
+                {
+                    return _recorderTasks.Any(x =>
+                        !x.Task.IsCompleted &&
+                        x.Recorder != null &&
+                        x.Recorder.Running &&
+                        x.Recorder.Track.Equals(_currentTrack)
+                    );
+                }
+            }
+        }
 
         public bool IsTypeAllowed => _currentTrack.IsNormalPlaying || IsRecordUnknownActive;
 
@@ -98,7 +108,7 @@ namespace EspionSpotify
             var isAudioSessionNotFound = !await SetSpotifyAudioSessionAndWaitToStart();
             BindSpotifyEventHandlers();
             Ready = false;
-            
+
             if (Recorder.TestFileWriter(_form, _audioSession, _userSettings))
             {
                 if (isAudioSessionNotFound)
@@ -165,7 +175,7 @@ namespace EspionSpotify
             _isPlaying = e.Playing;
 
             // was paused
-            if (!_isPlaying && _recorderTasks.Any(x => x.Task.Status == TaskStatus.Running))
+            if (!_isPlaying && IsRecording())
             {
                 _form.UpdateNumUp();
             }
@@ -173,6 +183,14 @@ namespace EspionSpotify
             MutesSpotifyAds(_currentTrack.Ad);
 
             _form.UpdateIconSpotify(_isPlaying);
+        }
+
+        private bool IsRecording()
+        {
+            lock(SyncRoot)
+            {
+                return _recorderTasks.Any(x => x.Task.Status == TaskStatus.Running);
+            }            
         }
 
         private void OnTrackChanged(object sender, TrackChangeEventArgs e)
@@ -186,14 +204,14 @@ namespace EspionSpotify
             {
                 RecordSpotify();
             }
-            
+
             DoIKeepLastSong();
 
             if (!canRecord)
             {
                 _form.UpdateIconSpotify(_isPlaying);
             }
-            
+
             if (IsMaxOrderNumberAsFileExceeded)
             {
                 _form.WriteIntoConsole(I18NKeys.LogMaxFileSequenceReached, _userSettings.OrderNumberMax);
@@ -205,7 +223,7 @@ namespace EspionSpotify
         private void OnTrackTimeChanged(object sender, TrackTimeChangeEventArgs e)
         {
             _currentTrack.CurrentPosition = e.TrackTime;
-            _form.UpdateRecordedTime(RecorderUpAndRunning ? (int?) e.TrackTime : null);
+            _form.UpdateRecordedTime(RecorderUpAndRunning ? (int?)e.TrackTime : null);
         }
 
         private void UpdateInterfaceOnNewTrack()
@@ -285,19 +303,22 @@ namespace EspionSpotify
             CountSeconds = 0;
 
             var recorder = new Recorder(
-                form: _form, 
+                form: _form,
                 audioThrottler: _audioThrottler,
                 userSettings: _userSettings,
                 track: ref _currentTrack,
                 fileSystem: _fileSystem);
 
-            _recorderTasks.Add(new RecorderTask
+            lock(SyncRoot)
             {
-                Task = Task.Run(() => recorder.Run(_cancellationToken), _cancellationToken.Token),
-                Recorder = recorder,
-                Token = _cancellationToken
-            });
-            
+                _recorderTasks.Add(new RecorderTask
+                {
+                    Task = Task.Run(() => recorder.Run(_cancellationToken), _cancellationToken.Token),
+                    Recorder = recorder,
+                    Token = _cancellationToken
+                });
+            }
+
             _form.UpdateIconSpotify(_isPlaying, true);
         }
 
@@ -335,9 +356,17 @@ namespace EspionSpotify
                 Enabled = false
             };
 
-            while (_recorderTasks.Count == 0 && SpotifyConnect.IsSpotifyRunning()) await Task.Delay(300);
+            while (!IsRecordingTaskQueued() && SpotifyConnect.IsSpotifyRunning()) await Task.Delay(300);
 
             _recordingTimer.Enabled = true;
+        }
+
+        private bool IsRecordingTaskQueued()
+        {
+            lock(SyncRoot)
+            {
+                return _recorderTasks.Count > 0;
+            }            
         }
 
         private void ResetAudioSession()
@@ -349,7 +378,7 @@ namespace EspionSpotify
                 _audioSession.ClearSpotifyAudioSessionControls();
                 _audioSession.UnrouteSpotifyAudioSessions();
             }
-            
+
             _audioThrottler.Running = false;
         }
 
@@ -381,14 +410,21 @@ namespace EspionSpotify
 
         private void ManageRecorderTasks()
         {
-            if (_recorderTasks.Count > 0) _form.UpdateNumUp();
-            _recorderTasks.RemoveAll(x => x.Task.Status == TaskStatus.RanToCompletion);
+            if (IsRecordingTaskQueued()) _form.UpdateNumUp();
+            lock(SyncRoot)
+            {
+                _recorderTasks.RemoveAll(x => x.Task.Status == TaskStatus.RanToCompletion);
+            }
         }
 
         private void DoIKeepLastSong()
         {
-            // always increment when session ends
-            if (!Running && _recorderTasks.Any(t => t.Task.Status != TaskStatus.RanToCompletion)) _form.UpdateNumUp();
+            lock(SyncRoot)
+            {
+                // always increment when session ends
+                if (!Running && _recorderTasks.Any(t => t.Task.Status != TaskStatus.RanToCompletion)) _form.UpdateNumUp();
+            }
+
             // valid if the track is removed, go back one count
             if (RecorderUpAndRunning && CountSeconds < _userSettings.MinimumRecordedLengthSeconds)
                 _form.UpdateNumDown();
@@ -396,12 +432,15 @@ namespace EspionSpotify
 
         private void StopLastRecorder()
         {
-            var recorder = _recorderTasks.LastOrDefault()?.Recorder;
-            if (recorder == null || _recorderTasks.Count == 0 || _recorderTasks.Last().Task.IsCompleted) return;
-            if (recorder.Running)
+            lock(SyncRoot)
             {
-                recorder.Running = false;
-                recorder.CountSeconds = CountSeconds;
+                var recorder = _recorderTasks.LastOrDefault()?.Recorder;
+                if (recorder == null || _recorderTasks.Count == 0 || _recorderTasks.Last().Task.IsCompleted) return;
+                if (recorder.Running)
+                {
+                    recorder.Running = false;
+                    recorder.CountSeconds = CountSeconds;
+                }
             }
         }
 
@@ -423,22 +462,25 @@ namespace EspionSpotify
                 ResetAudioSession();
                 ResetSpotifyHandler();
 
-                _recorderTasks.ForEach(x =>
+                lock(SyncRoot)
                 {
-                    x.Token.Cancel();
-                    try
+                    _recorderTasks.ForEach(x =>
                     {
-                        x.Task.Wait();
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
-                    finally
-                    {
-                        x.Task.Dispose();
-                    }
-                });
+                        x.Token.Cancel();
+                        try
+                        {
+                            x.Task.Wait();
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
+                        finally
+                        {
+                            x.Task.Dispose();
+                        }
+                    });
+                }               
 
                 if (_audioThrottler != null)
                 {
