@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using EspionSpotify.Enums;
 using EspionSpotify.Extensions;
 using EspionSpotify.Models;
+using EspionSpotify.Native;
 using EspionSpotify.Spotify;
 using SpotifyAPI.Web;
 using SpotifyAPI.Web.Auth;
@@ -24,6 +25,7 @@ namespace EspionSpotify.API
         private bool _disposed;
         private string _refreshToken;
         private Token _token;
+        private ProcessManager _processManager = new ProcessManager();
 
         public SpotifyAPI()
         {
@@ -157,6 +159,9 @@ namespace EspionSpotify.API
 
                     if (IsSpotifyTokenExpired())
                     {
+                        var spotifyHandler = SpotifyProcess.GetMainSpotifyHandler(_processManager);
+                        NativeMethods.SendKeyPessPauseMedia(spotifyHandler.Value);
+
                         // open spotify authentication page if user is disconnected
                         // user might be connected with a different account that the one that granted rights
                         OpenAuthenticationDialog(true);

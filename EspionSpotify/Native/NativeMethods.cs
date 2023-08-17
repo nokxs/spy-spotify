@@ -6,6 +6,10 @@ namespace EspionSpotify.Native
 {
     internal static class NativeMethods
     {
+        private const uint WM_APPCOMMAND = 0x0319;
+        private const uint APPCOMMAND_MEDIA_PLAY_PAUSE = 0xE0000;
+        private const uint APPCOMMAND_MEDIA_NEXT = 0xB0000;
+
         internal static void PreventSleep()
         {
             SetThreadExecutionState(ExecutionState.EsContinuous | ExecutionState.EsSystemRequired);
@@ -20,10 +24,18 @@ namespace EspionSpotify.Native
         {
             Task.Run(() =>
             {
-                SendMessage(process, 0x0319, IntPtr.Zero, new IntPtr((long)720896));
+                SendMessage(process, WM_APPCOMMAND, IntPtr.Zero, new IntPtr(APPCOMMAND_MEDIA_NEXT));
             });
         }
-        
+
+        internal static void SendKeyPessPauseMedia(IntPtr process)
+        {
+            Task.Run(() =>
+            {
+                    SendMessage(process, WM_APPCOMMAND, IntPtr.Zero, new IntPtr(APPCOMMAND_MEDIA_PLAY_PAUSE));
+            });
+        }
+
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern ExecutionState SetThreadExecutionState(ExecutionState esFlags);
 
