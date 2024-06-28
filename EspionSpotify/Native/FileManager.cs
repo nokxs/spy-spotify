@@ -248,7 +248,7 @@ namespace EspionSpotify.Native
             var fileName = Normalize.RemoveDiacritics(
                 GoesAtRoot(userSettings.GroupByFoldersEnabled, track.IsUnknown)
                     ? track.ToTitleString()
-                    : track.ToString());
+                    : track.Artist + " - " + track.ToTitleString());
 
             if (track.Ad && !track.IsUnknownPlaying) fileName = $"{Constants.ADVERTISEMENT} {now:yyyyMMddHHmmss}";
 

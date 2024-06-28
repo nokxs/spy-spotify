@@ -179,7 +179,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Analytics.cs" />
-    <Compile Include="API\NoneAPI.cs" />
     <Compile Include="AudioSessions\AudioCircularBuffer.cs" />
     <Compile Include="AudioSessions\AudioLoopback.cs" />
     <Compile Include="AudioSessions\IAudioCircularBuffer.cs" />
@@ -243,7 +242,6 @@
     <Compile Include="IFrmEspionSpotify.cs" />
     <Compile Include="Native\Models\IProcess.cs" />
     <Compile Include="Native\IProcessManager.cs" />
-    <Compile Include="API\ILastFMAPI.cs" />
     <Compile Include="API\ISpotifyAPI.cs" />
     <Compile Include="Models\OutputFile.cs" />
     <Compile Include="Models\RecorderTask.cs" />
@@ -278,7 +276,6 @@
     <Compile Include="Spotify\SpotifyStatus.cs" />
     <Compile Include="Models\SpotifyWindowInfo.cs" />
     <Compile Include="Models\Track.cs" />
-    <Compile Include="API\LastFMAPI.cs" />
     <Compile Include="Normalize.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>

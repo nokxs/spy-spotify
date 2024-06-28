@@ -199,7 +199,11 @@ namespace EspionSpotify
 
             StopLastRecorder();
 
-            var canRecord = _isPlaying && !RecorderUpAndRunning && IsTypeAllowed && !IsMaxOrderNumberAsFileExceeded;
+            var canRecord = _isPlaying && 
+                            !RecorderUpAndRunning && 
+                            IsTypeAllowed && 
+                            !IsMaxOrderNumberAsFileExceeded &&
+                            ExternalAPI.Instance.IsAuthenticated;
             if (canRecord)
             {
                 RecordSpotify();
@@ -291,7 +295,6 @@ namespace EspionSpotify
 
         private void RecordSpotify()
         {
-            if (!ExternalAPI.Instance.IsAuthenticated) return;
             if (_stopRecordingWhenSongEnds)
             {
                 Running = false;

@@ -112,7 +112,6 @@
     <Compile Include="FileManagerTests.cs" />
     <Compile Include="SpotifyProcessTests.cs" />
     <Compile Include="TagLibTab.cs" />
-    <Compile Include="LastFMAPITests.cs" />
     <Compile Include="MapperID3Tests.cs" />
     <Compile Include="SpotifyAPITests.cs" />
     <Compile Include="SpotifyHandlerTests.cs" />

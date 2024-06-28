@@ -16,6 +16,7 @@ namespace EspionSpotify.API
 {
     public sealed class SpotifyAPI : ISpotifyAPI, IExternalAPI, IDisposable
     {
+        private readonly IFrmEspionSpotify _frmEspionSpotify;
         public const string SPOTIFY_API_DEFAULT_REDIRECT_URL = "http://localhost:4002";
         public const string SPOTIFY_API_DASHBOARD_URL = "https://developer.spotify.com/dashboard";
         private readonly AuthorizationCodeAuth _auth;
@@ -31,8 +32,9 @@ namespace EspionSpotify.API
         {
         }
 
-        public SpotifyAPI(string clientId, string secretId, string redirectUrl = SPOTIFY_API_DEFAULT_REDIRECT_URL)
+        public SpotifyAPI(string clientId, string secretId, IFrmEspionSpotify frmEspionSpotify, string redirectUrl = SPOTIFY_API_DEFAULT_REDIRECT_URL)
         {
+            _frmEspionSpotify = frmEspionSpotify;
             if (!string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(secretId))
             {
                 _auth = new AuthorizationCodeAuth(clientId, secretId, redirectUrl, redirectUrl,
@@ -210,6 +212,8 @@ namespace EspionSpotify.API
 
             MapSpotifyAlbumToTrack(track, album);
 
+            _frmEspionSpotify.WriteIntoConsole($"Update track: {track.Artist} - [{track.Year}] {track.Album} - {track.Title}");
+
             return true;
         }
 
@@ -237,10 +241,11 @@ namespace EspionSpotify.API
                 _token = await _authorizationCodeAuth.ExchangeCode(payload.Code);
                 _refreshToken = _token.RefreshToken;
                 _connectionDialogOpened = false;
+                _frmEspionSpotify.WriteIntoConsole("Spotify auth successful");
             }
-            catch
+            catch(Exception e)
             {
-                // ignored
+                _frmEspionSpotify.WriteIntoConsole($"Exception on spotify auth: {e.Message}");
             }
         }
 
@@ -277,14 +282,16 @@ namespace EspionSpotify.API
             {
                 try
                 {
+                    _frmEspionSpotify.WriteIntoConsole("Spotify token expired. Refreshing token...");
                     if (_api != null) _api.Dispose();
                     _api = null;
                     _token = await _authorizationCodeAuth.RefreshToken(_token.RefreshToken ?? _refreshToken);
                     _refreshToken = _token.RefreshToken;
+                    _frmEspionSpotify.WriteIntoConsole("Spotify token refreshed.");
                 }
-                catch
+                catch (Exception e)
                 {
-                    // ignored
+                    _frmEspionSpotify.WriteIntoConsole($"Exception on spotify token refresh: {e.Message}");
                 }
             }
 

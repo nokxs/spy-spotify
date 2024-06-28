@@ -2,6 +2,6 @@
 {
     public static class ExternalAPI
     {
-        public static IExternalAPI Instance { get; set; } = new NoneAPI();
+        public static IExternalAPI Instance { get; set; } = null;
     }
 }

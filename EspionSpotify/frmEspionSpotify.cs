@@ -21,8 +21,11 @@ using EspionSpotify.Translations;
 using MetroFramework;
 using MetroFramework.Controls;
 using MetroFramework.Forms;
+using MetroFramework.Properties;
 using NAudio.Lame;
 using Unosquare.Swan;
+using static System.Net.Mime.MediaTypeNames;
+using Resources = EspionSpotify.Properties.Resources;
 
 namespace EspionSpotify
 {
@@ -165,6 +168,20 @@ namespace EspionSpotify
             });
         }
 
+        public void WriteIntoConsole(string text)
+        {
+            rtbLog.SetPropertyThreadSafe(() =>
+            {
+                var log = $";{LogDate}{text}";
+
+                if (!string.IsNullOrEmpty(log))
+                {
+                    Settings.Default.app_console_logs += $";{log}";
+                    Settings.Default.Save();
+                }
+            });
+        }
+
         public void StopRecording()
         {
             if (tlSettings.InvokeRequired || tlAdvanced.InvokeRequired)
@@ -228,7 +245,7 @@ namespace EspionSpotify
             rbSpotifyAPI.Checked = Settings.Default.app_selected_external_api_id == (int) ExternalAPIType.Spotify &&
                                    _userSettings.IsSpotifyAPISet;
 
-            ReloadExternalAPI();
+            ReloadExternalApi();
 
 #if DEBUG
             Style = MetroColorStyle.Orange;
@@ -287,46 +304,17 @@ namespace EspionSpotify
             rbSpotifyAPI.Enabled = _userSettings.IsSpotifyAPISet;
         }
 
-        private void ReloadExternalAPI()
+        private void ReloadExternalApi()
         {
-            if (Settings.Default.settings_media_audio_format == (int) MediaFormat.Wav)
+            if (!_userSettings.IsSpotifyAPISet)
             {
-                SetExternalAPI(ExternalAPIType.None);
-                tlpAPI.Visible = false;
-                lblAPI.Visible = false;
-                return;
+                throw new Exception("Spotify API is not set");
             }
 
             tlpAPI.Visible = true;
             lblAPI.Visible = true;
-            if (_userSettings.IsSpotifyAPISet &&
-                Settings.Default.app_selected_external_api_id == (int) ExternalAPIType.Spotify)
-            {
-                SetExternalAPI(ExternalAPIType.Spotify, _userSettings.IsSpotifyAPISet);
-                return;
-            }
-            
-            SetExternalAPI(ExternalAPIType.LastFM);
-        }
 
-        private void SetExternalAPI(ExternalAPIType api, bool isSpotifyAPISet = false)
-        {
-            switch (api)
-            {
-                case ExternalAPIType.Spotify:
-                    if (isSpotifyAPISet)
-                        ExternalAPI.Instance = new API.SpotifyAPI(
-                            _userSettings.SpotifyAPIClientId,
-                            _userSettings.SpotifyAPISecretId,
-                            _userSettings.SpotifyAPIRedirectURL);
-                    break;
-                case ExternalAPIType.LastFM:
-                    ExternalAPI.Instance = new LastFMAPI();
-                    break;
-                default:
-                    ExternalAPI.Instance = new NoneAPI();
-                    break;
-            }
+            SetExternalAPI();
         }
 
         private void UpdateAudioEndPointFields(int volume, string friendlyName)
@@ -716,7 +704,7 @@ namespace EspionSpotify
             _userSettings.MediaFormat = mediaFormat;
             Settings.Default.settings_media_audio_format = mediaFormatIndex;
             Settings.Default.Save();
-            ReloadExternalAPI();
+            ReloadExternalApi();
             ReloadBitrateOptions();
             
             Task.Run(async () => await _analytics.LogAction($"media-format?type={mediaFormat.ToString()}"));
@@ -730,10 +718,19 @@ namespace EspionSpotify
             if (Settings.Default.app_selected_external_api_id == (int) mediaTagsAPI || !rb.Checked) return;
 
             var api = rb?.Tag?.ToString().ToMediaTagsAPI() ?? ExternalAPIType.LastFM;
-            SetExternalAPI(api, _userSettings.IsSpotifyAPISet);
+            SetExternalAPI();
             Settings.Default.app_selected_external_api_id = (int) mediaTagsAPI;
             Settings.Default.Save();
             Task.Run(async () => await _analytics.LogAction($"media-tags-api?type={api.ToString()}"));
+        }
+
+        private void SetExternalAPI()
+        {
+            ExternalAPI.Instance = new API.SpotifyAPI(
+                _userSettings.SpotifyAPIClientId,
+                _userSettings.SpotifyAPISecretId,
+                this,
+                _userSettings.SpotifyAPIRedirectURL);
         }
 
         private void TgRecordEverything_CheckedChanged(object sender, EventArgs e)
@@ -1140,8 +1137,7 @@ namespace EspionSpotify
 
             if (result != DialogResult.Cancel)
             {
-                var api = result == DialogResult.Yes ? ExternalAPIType.Spotify : ExternalAPIType.LastFM;
-                SetExternalAPI(api, _userSettings.IsSpotifyAPISet);
+                SetExternalAPI();
             }
 
             _frmSpotifyApiCredentials.Dispose();

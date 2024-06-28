@@ -14,5 +14,6 @@ namespace EspionSpotify
         void UpdateNumUp();
         void UpdateNumDown();
         void WriteIntoConsole(TranslationKeys resource, params object[] args);
+        void WriteIntoConsole(string text);
     }
 }
